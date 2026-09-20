@@ -55,7 +55,7 @@ export default function Navbar({ user, onMenuToggle }: NavbarProps) {
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8">
+    <header suppressHydrationWarning className="h-16 border-b border-slate-200 bg-white sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8">
       {/* Left: Mobile Menu Toggle & Brand */}
       <div className="flex items-center gap-3">
         {onMenuToggle && (

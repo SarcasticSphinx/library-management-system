@@ -70,6 +70,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar Container */}
       <aside
+        suppressHydrationWarning
         className={`fixed md:sticky top-0 left-0 z-50 md:z-20 h-screen w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-transform duration-200 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}

@@ -14,7 +14,7 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex" suppressHydrationWarning>
       {/* Sidebar (Desktop sticky & mobile drawer) */}
       <Sidebar
         user={user}
