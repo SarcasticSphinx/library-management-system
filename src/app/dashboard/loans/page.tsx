@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { getCirculationRecordsAction } from '@/actions/loanActions';
 import LoanTable from '@/components/loans/LoanTable';
 import IssueBookButton from '@/components/loans/IssueBookButton';
+import LoanStats from '@/components/loans/LoanStats';
 
 async function LoansContent() {
   const result = await getCirculationRecordsAction();
@@ -21,6 +22,19 @@ async function LoansContent() {
           <p className="text-red-800">{result.error}</p>
         </div>
       )}
+
+      {/* Statistics Banner */}
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 rounded-lg h-24 animate-pulse" />
+            ))}
+          </div>
+        }
+      >
+        <LoanStats />
+      </Suspense>
 
       <div className="mb-6">
         <IssueBookButton />
