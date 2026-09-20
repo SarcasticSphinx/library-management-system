@@ -63,16 +63,24 @@ export async function createBookAction(data: BookInput) {
   try {
     await prisma.book.create({
       data: {
-        title: data.title.trim(), author: data.author.trim(), isbn: data.isbn.trim(), category: data.category.trim(),
-        description: data.description?.trim() || null, publisher: data.publisher?.trim() || null,
-        publishedYear: data.publishedYear || null, shelfLocation: data.shelfLocation?.trim() || null,
-        totalCopies: data.totalCopies, availableCopies: data.totalCopies,
+        title: data.title.trim(),
+        author: data.author.trim(),
+        isbn: data.isbn.trim(),
+        category: data.category.trim(),
+        description: data.description?.trim() || null,
+        publisher: data.publisher?.trim() || null,
+        publishedYear: data.publishedYear || null,
+        shelfLocation: data.shelfLocation?.trim() || null,
+        totalCopies: data.totalCopies,
+        availableCopies: data.totalCopies,
       },
     });
     revalidatePath(catalogPath);
     return { success: true };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return { success: false, error: "A book with this ISBN already exists." };
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { success: false, error: "A book with this ISBN already exists." };
+    }
     return { success: false, error: "Unable to create the book." };
   }
 }
@@ -82,37 +90,127 @@ export async function updateBookAction(id: string, data: Partial<BookInput>) {
   if (validationError) return { success: false, error: validationError };
 
   try {
-    const current = await prisma.book.findUnique({ where: { id }, select: { totalCopies: true, availableCopies: true } });
+    const current = await prisma.book.findUnique({
+      where: { id },
+      select: { totalCopies: true, availableCopies: true },
+    });
     if (!current) return { success: false, error: "Book not found." };
     const checkedOut = current.totalCopies - current.availableCopies;
     const totalCopies = data.totalCopies ?? current.totalCopies;
-    if (totalCopies < checkedOut) return { success: false, error: `Total copies cannot be lower than ${checkedOut} active loan(s).` };
+    if (totalCopies < checkedOut) {
+      return { success: false, error: `Total copies cannot be lower than ${checkedOut} active loan(s).` };
+    }
     await prisma.book.update({
       where: { id },
       data: {
-        ...(data.title !== undefined && { title: data.title.trim() }), ...(data.author !== undefined && { author: data.author.trim() }),
-        ...(data.isbn !== undefined && { isbn: data.isbn.trim() }), ...(data.category !== undefined && { category: data.category.trim() }),
-        ...(data.description !== undefined && { description: data.description.trim() || null }), ...(data.publisher !== undefined && { publisher: data.publisher.trim() || null }),
-        ...(data.publishedYear !== undefined && { publishedYear: data.publishedYear || null }), ...(data.shelfLocation !== undefined && { shelfLocation: data.shelfLocation.trim() || null }),
+        ...(data.title !== undefined && { title: data.title.trim() }),
+        ...(data.author !== undefined && { author: data.author.trim() }),
+        ...(data.isbn !== undefined && { isbn: data.isbn.trim() }),
+        ...(data.category !== undefined && { category: data.category.trim() }),
+        ...(data.description !== undefined && { description: data.description.trim() || null }),
+        ...(data.publisher !== undefined && { publisher: data.publisher.trim() || null }),
+        ...(data.publishedYear !== undefined && { publishedYear: data.publishedYear || null }),
+        ...(data.shelfLocation !== undefined && { shelfLocation: data.shelfLocation.trim() || null }),
         ...(data.totalCopies !== undefined && { totalCopies, availableCopies: totalCopies - checkedOut }),
       },
     });
     revalidatePath(catalogPath);
     return { success: true };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return { success: false, error: "A book with this ISBN already exists." };
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { success: false, error: "A book with this ISBN already exists." };
+    }
     return { success: false, error: "Unable to update the book." };
   }
 }
 
 export async function deleteBookAction(id: string) {
   try {
-    const activeLoans = await prisma.borrowRecord.count({ where: { bookId: id, status: { in: ["BORROWED", "OVERDUE"] } } });
-    if (activeLoans > 0) return { success: false, error: "This book cannot be deleted while it is checked out." };
+    const activeLoans = await prisma.borrowRecord.count({
+      where: { bookId: id, status: { in: ["BORROWED", "OVERDUE"] } },
+    });
+    if (activeLoans > 0) {
+      return { success: false, error: "This book cannot be deleted while it is checked out." };
+    }
     await prisma.book.delete({ where: { id } });
     revalidatePath(catalogPath);
     return { success: true };
   } catch {
     return { success: false, error: "Unable to delete the book." };
+  }
+}
+
+/**
+ * Get all books with available copies for borrowing
+ */
+export async function getAvailableBooksAction() {
+  try {
+    const books = await prisma.book.findMany({
+      where: {
+        availableCopies: {
+          gt: 0,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        isbn: true,
+        category: true,
+        availableCopies: true,
+        totalCopies: true,
+        coverImage: true,
+      },
+      orderBy: {
+        title: "asc",
+      },
+    });
+
+    return {
+      success: true,
+      data: books,
+    };
+  } catch (error) {
+    console.error("Error fetching available books:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch books",
+      data: [],
+    };
+  }
+}
+
+/**
+ * Get all books including those with zero available copies
+ */
+export async function getAllBooksAction() {
+  try {
+    const books = await prisma.book.findMany({
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        isbn: true,
+        category: true,
+        availableCopies: true,
+        totalCopies: true,
+        coverImage: true,
+      },
+      orderBy: {
+        title: "asc",
+      },
+    });
+
+    return {
+      success: true,
+      data: books,
+    };
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch books",
+      data: [],
+    };
   }
 }
