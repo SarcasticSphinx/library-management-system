@@ -53,6 +53,8 @@ To ensure clean separation of concerns, eliminate merge conflicts, and satisfy R
 * `src/components/layout/Navbar.tsx` & `Sidebar.tsx`
 * `src/lib/auth.ts` / server action handlers for authentication
 
+*For step-by-step roadmap, tasks, and exact commits, see [Member 1 Detailed Execution Guide](./MEMBER_1_WORK.md).*
+
 ---
 
 ### Member 2: Book Catalog, Inventory & Search System
@@ -79,6 +81,8 @@ To ensure clean separation of concerns, eliminate merge conflicts, and satisfy R
 * `src/components/books/BookFilterBar.tsx`
 * `src/components/books/BookFormModal.tsx`
 * `src/actions/bookActions.ts` (Server actions for Book CRUD)
+
+*For step-by-step roadmap, tasks, and exact commits, see [Member 2 Detailed Execution Guide](./MEMBER_2_WORK.md).*
 
 ---
 
@@ -107,6 +111,8 @@ To ensure clean separation of concerns, eliminate merge conflicts, and satisfy R
 * `src/components/loans/LoanTable.tsx`
 * `src/components/loans/ReturnButton.tsx`
 * `src/actions/loanActions.ts` (Server actions for Borrow and Return)
+
+*For step-by-step roadmap, tasks, and exact commits, see [Member 3 Detailed Execution Guide](./MEMBER_3_WORK.md).*
 
 ---
 
