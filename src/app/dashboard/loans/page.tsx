@@ -1,10 +1,44 @@
-import { Suspense } from 'react';
-import { getCirculationRecordsAction } from '@/actions/loanActions';
-import LoanTable from '@/components/loans/LoanTable';
-import IssueBookButton from '@/components/loans/IssueBookButton';
-import LoanStats from '@/components/loans/LoanStats';
+import { Suspense } from "react";
+import { getSession } from "@/lib/auth";
+import { Role } from "@prisma/client";
+import { ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { getCirculationRecordsAction } from "@/actions/loanActions";
+import LoanTable from "@/components/loans/LoanTable";
+import IssueBookButton from "@/components/loans/IssueBookButton";
+import LoanStats from "@/components/loans/LoanStats";
+
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Circulation Management - RUET Library Management System",
+};
 
 async function LoansContent() {
+  const session = await getSession();
+
+  if (session?.role !== Role.ADMIN) {
+    return (
+      <div className="max-w-md mx-auto my-16 p-8 bg-white border border-slate-200 rounded-2xl text-center shadow-xs">
+        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
+        <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+          Circulation desk and book issue management is restricted to library administrators.
+        </p>
+        <div className="mt-6">
+          <Link
+            href="/dashboard/my-loans"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#6395ee] hover:bg-[#4d83e6] text-white text-xs font-semibold transition"
+          >
+            View My Borrowed Books
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const result = await getCirculationRecordsAction();
   const loans = result.success ? result.data : [];
 

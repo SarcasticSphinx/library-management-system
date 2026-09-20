@@ -5,6 +5,14 @@ import { BorrowStatus } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import type { IssueBookInput, ReturnBookInput, LoanRecord } from '@/types/loan';
 
+function safeRevalidatePath(path: string) {
+  try {
+    revalidatePath(path);
+  } catch {
+    // Graceful fallback outside Next.js request scope
+  }
+}
+
 /**
  * Issue a book to a user with atomic transaction
  * - Verifies user exists and is ACTIVE
@@ -102,9 +110,9 @@ export async function issueBookAction(input: IssueBookInput) {
     });
 
     // Revalidate relevant pages
-    revalidatePath('/dashboard/loans');
-    revalidatePath('/dashboard/books');
-    revalidatePath(`/dashboard/my-loans`);
+    safeRevalidatePath('/dashboard/loans');
+    safeRevalidatePath('/dashboard/books');
+    safeRevalidatePath('/dashboard/my-loans');
 
     return {
       success: true,
@@ -224,9 +232,9 @@ export async function returnBookAction(input: ReturnBookInput) {
     });
 
     // Revalidate relevant pages
-    revalidatePath('/dashboard/loans');
-    revalidatePath('/dashboard/books');
-    revalidatePath(`/dashboard/my-loans`);
+    safeRevalidatePath('/dashboard/loans');
+    safeRevalidatePath('/dashboard/books');
+    safeRevalidatePath('/dashboard/my-loans');
 
     const fineMessage = result.fineAmount > 0 
       ? ` Overdue fine: ${result.fineAmount} BDT`
@@ -254,9 +262,22 @@ export async function returnBookAction(input: ReturnBookInput) {
 export async function getCirculationRecordsAction(statusFilter?: BorrowStatus) {
   try {
     const now = new Date();
+    const whereClause = statusFilter
+      ? statusFilter === BorrowStatus.OVERDUE
+        ? {
+            OR: [
+              { status: BorrowStatus.OVERDUE },
+              {
+                status: BorrowStatus.BORROWED,
+                dueDate: { lt: now },
+              },
+            ],
+          }
+        : { status: statusFilter }
+      : undefined;
 
     const records = await prisma.borrowRecord.findMany({
-      where: statusFilter ? { status: statusFilter } : undefined,
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -392,8 +413,13 @@ export async function getCirculationStatsAction() {
       // Total overdue loans
       prisma.borrowRecord.count({
         where: {
-          status: BorrowStatus.BORROWED,
-          dueDate: { lt: now },
+          OR: [
+            { status: BorrowStatus.OVERDUE },
+            {
+              status: BorrowStatus.BORROWED,
+              dueDate: { lt: now },
+            },
+          ],
         },
       }),
       

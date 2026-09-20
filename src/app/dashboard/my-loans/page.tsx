@@ -1,17 +1,16 @@
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
 import { getUserBorrowHistoryAction } from '@/actions/loanActions';
 import UserLoanHistoryTable from '@/components/loans/UserLoanHistoryTable';
 
-// For demo purposes, we'll use a placeholder user ID
-// In a real app, this would come from the authenticated session
-const DEMO_USER_ID = 'demo-user-id';
-
 async function MyLoansContent() {
-  // TODO: Replace with actual user session ID
-  // const session = await getServerSession();
-  // const userId = session?.user?.id;
-  
-  const result = await getUserBorrowHistoryAction(DEMO_USER_ID);
+  const session = await getSession();
+  if (!session) {
+    redirect('/login');
+  }
+
+  const result = await getUserBorrowHistoryAction(session.id);
   const loans = result.success ? result.data : [];
 
   return (

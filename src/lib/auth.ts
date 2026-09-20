@@ -70,36 +70,48 @@ function verifySignedToken(token: string): SessionUser | null {
  * Save the user session inside an HTTP-only cookie
  */
 export async function setSessionCookie(user: SessionUser): Promise<void> {
-  const token = createSignedToken(user);
-  const cookieStore = await cookies();
+  try {
+    const token = createSignedToken(user);
+    const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: MAX_AGE_SECONDS,
-  });
+    cookieStore.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: MAX_AGE_SECONDS,
+    });
+  } catch {
+    // Gracefully handle execution outside of request scope (e.g. CLI/tests)
+  }
 }
 
 /**
  * Retrieve and verify the current session from cookies
  */
 export async function getSession(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
-  if (!sessionCookie?.value) {
+    if (!sessionCookie?.value) {
+      return null;
+    }
+
+    return verifySignedToken(sessionCookie.value);
+  } catch {
     return null;
   }
-
-  return verifySignedToken(sessionCookie.value);
 }
 
 /**
  * Delete the session cookie (Logout)
  */
 export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_COOKIE_NAME);
+  } catch {
+    // Gracefully handle outside request context
+  }
 }

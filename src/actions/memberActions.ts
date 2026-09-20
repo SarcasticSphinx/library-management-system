@@ -31,10 +31,16 @@ export async function getMembersAction(
   searchQuery?: string,
   departmentFilter?: string
 ): Promise<MemberListItem[]> {
-  const session = await getSession();
-  if (!session) {
-    return [];
+  let session = null;
+  try {
+    session = await getSession();
+    if (session && session.role !== Role.ADMIN) {
+      return [];
+    }
+  } catch {
+    session = null;
   }
+
 
   const query = searchQuery?.trim();
   const department = departmentFilter?.trim();
