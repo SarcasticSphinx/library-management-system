@@ -1,18 +1,25 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { BorrowStatus } from '@prisma/client';
 import LoanStatusBadge from './LoanStatusBadge';
+import ReturnActionButton from './ReturnActionButton';
 import type { LoanRecord } from '@/types/loan';
 
 interface LoanTableProps {
   loans: LoanRecord[];
-  onReturnBook?: (recordId: string) => void;
 }
 
-export default function LoanTable({ loans, onReturnBook }: LoanTableProps) {
+export default function LoanTable({ loans }: LoanTableProps) {
   const [statusFilter, setStatusFilter] = useState<BorrowStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  const handleReturnSuccess = () => {
+    // Refresh the page data
+    router.refresh();
+  };
 
   // Filter and search logic
   const filteredLoans = useMemo(() => {
@@ -193,13 +200,11 @@ export default function LoanTable({ loans, onReturnBook }: LoanTableProps) {
                       <LoanStatusBadge status={loan.status} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {loan.status !== BorrowStatus.RETURNED && onReturnBook && (
-                        <button
-                          onClick={() => onReturnBook(loan.id)}
-                          className="text-brand hover:text-brand-hover font-medium"
-                        >
-                          Return
-                        </button>
+                      {loan.status !== BorrowStatus.RETURNED && (
+                        <ReturnActionButton
+                          loan={loan}
+                          onSuccess={handleReturnSuccess}
+                        />
                       )}
                       {loan.status === BorrowStatus.RETURNED && loan.returnDate && (
                         <div className="text-xs text-gray-500">
