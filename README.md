@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RUET Library Management System (LMS)
+**Course:** CSE 3206 – Software Engineering Sessional  
+**Lab 2 Milestone:** Software Process Models, Requirement Analysis & MVP Development  
+**Department of Computer Science & Engineering, RUET**
 
-## Getting Started
+---
 
-First, run the development server:
+## 📖 Project Overview
+The **RUET Library Management System** is a modern, modular web application designed to streamline library cataloging, book issuance, return processing, and member activity tracking. Developed as a Minimum Viable Product (MVP) for CSE 3206.
 
+---
+
+## 👥 Team & Work Distribution
+
+| Member | Assigned Module | Feature Branch | Scope & Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **Member 1** | Auth, Member Directory & Dashboard Shell | `feature/auth-and-members` | Authentication (Sign in/up), role protection (`ADMIN`/`MEMBER`), member list, and dashboard navigation layout. |
+| **Member 2** | Book Catalog & Inventory CRUD | `feature/book-catalog` | Book listings, category filters, real-time search, and book CRUD (Add/Edit/Delete). |
+| **Member 3** | Circulation Engine (Borrow & Return) | `feature/borrow-return-system` | Book checkout/issuance, return processing, due date calculations, and borrowing logs. |
+
+For detailed breakdown and git guidelines, see [`docs/WORK_DISTRIBUTION.md`](./docs/WORK_DISTRIBUTION.md).
+
+---
+
+## 🛠 Tech Stack
+* **Frontend & Backend:** [Next.js (App Router)](https://nextjs.org/) with TypeScript
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
+* **Database:** [Neon Serverless PostgreSQL](https://neon.tech/)
+* **ORM:** [Prisma ORM](https://www.prisma.io/)
+* **Security:** `bcryptjs` for credential encryption
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+* Node.js (v18 or higher)
+* npm
+
+### 2. Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/<your-username>/Library-Management-System.git
+cd Library-Management-System
+
+# Install dependencies
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Environment Configuration
+Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+Update `.env` with your Neon PostgreSQL connection string:
+```env
+DATABASE_URL="postgresql://neondb_owner:...@ep-...-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Database Setup & Seed
+```bash
+# Push Prisma schema to Neon
+npx prisma db push
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Seed sample books and demo users
+npx prisma db seed
+```
 
-## Learn More
+### 5. Run the Application
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📂 Project Structure
+```text
+.
+├── docs/                     # Lab manual, work distribution, and reports
+│   ├── lab-manual.md
+│   └── WORK_DISTRIBUTION.md
+├── prisma/                   # Database schema and seed scripts
+│   ├── schema.prisma
+│   └── seed.ts
+├── public/                   # Static assets
+└── src/
+    ├── actions/              # Next.js Server Actions (CRUD & Transactions)
+    ├── app/                  # App Router pages and layouts
+    ├── components/           # Reusable UI components
+    └── lib/                  # Shared utilities and Prisma client
+```

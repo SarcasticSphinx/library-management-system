@@ -1,0 +1,90 @@
+// Prisma schema for RUET Library Management System
+// Database: Neon PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum BorrowStatus {
+  BORROWED
+  RETURNED
+  OVERDUE
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  password      String
+  role          Role           @default(MEMBER)
+  status        UserStatus     @default(ACTIVE)
+  studentId     String?        @unique
+  department    String?        @default("CSE")
+  phone         String?
+  avatar        String?
+  borrowRecords BorrowRecord[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([role])
+  @@index([studentId])
+}
+
+model Book {
+  id              String         @id @default(cuid())
+  title           String
+  author          String
+  isbn            String         @unique
+  category        String
+  description     String?
+  publisher       String?
+  publishedYear   Int?
+  shelfLocation   String?
+  coverImage      String?
+  totalCopies     Int            @default(1)
+  availableCopies Int            @default(1)
+  borrowRecords   BorrowRecord[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([title])
+  @@index([author])
+  @@index([category])
+  @@index([isbn])
+}
+
+model BorrowRecord {
+  id         String       @id @default(cuid())
+  userId     String
+  bookId     String
+  borrowDate DateTime     @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+  status     BorrowStatus @default(BORROWED)
+  fineAmount Float        @default(0.0)
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@index([dueDate])
+}
