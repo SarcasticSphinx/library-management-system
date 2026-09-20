@@ -9,13 +9,10 @@ import {
   ArrowRightLeft,
   AlertTriangle,
   ArrowRight,
-  Database,
   Search,
-  PlusCircle,
   Clock,
-  ShieldCheck,
 } from "lucide-react";
-import { Role, BorrowStatus, UserStatus } from "@prisma/client";
+import { Role, BorrowStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 

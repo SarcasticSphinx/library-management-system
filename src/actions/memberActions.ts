@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Role, UserStatus, BorrowStatus } from "@prisma/client";
+import { Role, UserStatus, BorrowStatus, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export interface MemberListItem {
@@ -39,7 +39,7 @@ export async function getMembersAction(
   const query = searchQuery?.trim();
   const department = departmentFilter?.trim();
 
-  const whereClause: any = {};
+  const whereClause: Prisma.UserWhereInput = {};
 
   if (query) {
     whereClause.OR = [
