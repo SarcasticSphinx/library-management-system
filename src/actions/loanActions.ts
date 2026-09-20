@@ -1,8 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { BorrowStatus } from '@prisma/client';
+import { BorrowStatus, Role } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 import type { IssueBookInput, ReturnBookInput, LoanRecord } from '@/types/loan';
 
 function safeRevalidatePath(path: string) {
@@ -23,6 +24,13 @@ export async function issueBookAction(input: IssueBookInput) {
   const { userId, bookId, loanDays = 14, notes } = input;
 
   try {
+    const session = await getSession();
+    if (session && session.role !== Role.ADMIN) {
+      return {
+        success: false,
+        error: 'Access denied. Only library administrators can issue books at the circulation desk.',
+      };
+    }
     // Execute atomic transaction
     const result = await prisma.$transaction(async (tx) => {
       // 1. Verify user exists and is ACTIVE
@@ -138,6 +146,13 @@ export async function returnBookAction(input: ReturnBookInput) {
   const { recordId } = input;
 
   try {
+    const session = await getSession();
+    if (session && session.role !== Role.ADMIN) {
+      return {
+        success: false,
+        error: 'Access denied. Only library administrators can process book returns.',
+      };
+    }
     const result = await prisma.$transaction(async (tx) => {
       // 1. Fetch the borrow record
       const record = await tx.borrowRecord.findUnique({

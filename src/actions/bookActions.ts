@@ -1,11 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma, Role, BorrowStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import type { BookInput } from "@/types/book";
 
 const catalogPath = "/dashboard/books";
+
+function safeRevalidatePath(path: string) {
+  try {
+    revalidatePath(path);
+  } catch {
+    // Safely ignore when called outside Next.js request context
+  }
+}
 
 function validateBookInput(data: Partial<BookInput>) {
   if (!data.title?.trim() || !data.author?.trim() || !data.isbn?.trim() || !data.category?.trim()) {
@@ -56,7 +65,15 @@ export async function getBookByIdAction(id: string) {
   return prisma.book.findUnique({ where: { id } });
 }
 
+/**
+ * Add a new book to the library catalog (Admin Only)
+ */
 export async function createBookAction(data: BookInput) {
+  const session = await getSession();
+  if (!session || session.role !== Role.ADMIN) {
+    return { success: false, error: "Access denied. Only library administrators can add books." };
+  }
+
   const validationError = validateBookInput(data);
   if (validationError) return { success: false, error: validationError };
 
@@ -75,7 +92,7 @@ export async function createBookAction(data: BookInput) {
         availableCopies: data.totalCopies,
       },
     });
-    revalidatePath(catalogPath);
+    safeRevalidatePath(catalogPath);
     return { success: true };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -85,7 +102,15 @@ export async function createBookAction(data: BookInput) {
   }
 }
 
+/**
+ * Modify book metadata or copy stock (Admin Only)
+ */
 export async function updateBookAction(id: string, data: Partial<BookInput>) {
+  const session = await getSession();
+  if (!session || session.role !== Role.ADMIN) {
+    return { success: false, error: "Access denied. Only library administrators can modify books." };
+  }
+
   const validationError = validateUpdateInput(data);
   if (validationError) return { success: false, error: validationError };
 
@@ -114,7 +139,7 @@ export async function updateBookAction(id: string, data: Partial<BookInput>) {
         ...(data.totalCopies !== undefined && { totalCopies, availableCopies: totalCopies - checkedOut }),
       },
     });
-    revalidatePath(catalogPath);
+    safeRevalidatePath(catalogPath);
     return { success: true };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -124,19 +149,140 @@ export async function updateBookAction(id: string, data: Partial<BookInput>) {
   }
 }
 
+/**
+ * Delete a book from the library catalog (Admin Only)
+ */
 export async function deleteBookAction(id: string) {
+  const session = await getSession();
+  if (!session || session.role !== Role.ADMIN) {
+    return { success: false, error: "Access denied. Only library administrators can delete books." };
+  }
+
   try {
     const activeLoans = await prisma.borrowRecord.count({
-      where: { bookId: id, status: { in: ["BORROWED", "OVERDUE"] } },
+      where: { bookId: id, status: { in: [BorrowStatus.BORROWED, BorrowStatus.OVERDUE] } },
     });
     if (activeLoans > 0) {
       return { success: false, error: "This book cannot be deleted while it is checked out." };
     }
     await prisma.book.delete({ where: { id } });
-    revalidatePath(catalogPath);
+    safeRevalidatePath(catalogPath);
     return { success: true };
   } catch {
     return { success: false, error: "Unable to delete the book." };
+  }
+}
+
+/**
+ * Student Self-Service Borrow Action
+ * Normal users can borrow any book with availableCopies > 0
+ */
+export async function borrowBookAction(bookId: string) {
+  const session = await getSession();
+  if (!session) {
+    return { success: false, error: "Please sign in to your library account to borrow books." };
+  }
+
+  try {
+    // 1. Verify user status
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: { id: true, name: true, status: true },
+    });
+
+    if (!user || user.status !== "ACTIVE") {
+      return { success: false, error: "Your account is not active. Please contact the librarian." };
+    }
+
+    // 2. Check active loans limit (max 3 books per student)
+    const activeLoansCount = await prisma.borrowRecord.count({
+      where: {
+        userId: session.id,
+        status: { in: [BorrowStatus.BORROWED, BorrowStatus.OVERDUE] },
+      },
+    });
+
+    if (activeLoansCount >= 3) {
+      return {
+        success: false,
+        error: "Borrowing limit reached (maximum 3 active books allowed per student). Please return an existing loan first.",
+      };
+    }
+
+    // 3. Check if user already holds an active copy of this exact book
+    const existingLoan = await prisma.borrowRecord.findFirst({
+      where: {
+        userId: session.id,
+        bookId,
+        status: { in: [BorrowStatus.BORROWED, BorrowStatus.OVERDUE] },
+      },
+    });
+
+    if (existingLoan) {
+      return {
+        success: false,
+        error: "You currently have an active loan for this book. Multiple copies of the same title are not permitted.",
+      };
+    }
+
+    // 4. Atomic transaction to decrement available copies and create BorrowRecord
+    const result = await prisma.$transaction(async (tx) => {
+      const book = await tx.book.findUnique({
+        where: { id: bookId },
+        select: { id: true, title: true, availableCopies: true },
+      });
+
+      if (!book) {
+        throw new Error("Book not found.");
+      }
+
+      if (book.availableCopies <= 0) {
+        throw new Error(`"${book.title}" is currently out of stock.`);
+      }
+
+      const borrowDate = new Date();
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 14); // 14-day standard loan
+
+      const record = await tx.borrowRecord.create({
+        data: {
+          userId: session.id,
+          bookId,
+          borrowDate,
+          dueDate,
+          status: BorrowStatus.BORROWED,
+          notes: "Student self-service checkout",
+        },
+      });
+
+      await tx.book.update({
+        where: { id: bookId },
+        data: { availableCopies: { decrement: 1 } },
+      });
+
+      return { record, bookTitle: book.title, dueDate };
+    });
+
+    safeRevalidatePath(catalogPath);
+    safeRevalidatePath("/dashboard/my-loans");
+    safeRevalidatePath("/dashboard");
+
+    const formattedDue = result.dueDate.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    return {
+      success: true,
+      message: `"${result.bookTitle}" successfully checked out! Due date: ${formattedDue}.`,
+    };
+  } catch (error) {
+    console.error("borrowBookAction error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to borrow book.",
+    };
   }
 }
 
