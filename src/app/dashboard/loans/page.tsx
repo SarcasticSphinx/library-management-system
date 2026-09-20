@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { getCirculationRecordsAction } from '@/actions/loanActions';
 import LoanTable from '@/components/loans/LoanTable';
+import IssueBookButton from '@/components/loans/IssueBookButton';
 
 async function LoansContent() {
   const result = await getCirculationRecordsAction();
@@ -22,9 +23,7 @@ async function LoansContent() {
       )}
 
       <div className="mb-6">
-        <button className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors font-medium">
-          Issue Book
-        </button>
+        <IssueBookButton />
       </div>
 
       <LoanTable loans={loans} />
