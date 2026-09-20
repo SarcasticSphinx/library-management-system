@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { issueBookAction } from '@/actions/loanActions';
 import { getActiveUsersAction } from '@/actions/userActions';
 import { getAvailableBooksAction } from '@/actions/bookActions';
@@ -51,14 +51,7 @@ export default function IssueBookModal({
   const [userSearch, setUserSearch] = useState('');
   const [bookSearch, setBookSearch] = useState('');
 
-  // Load users and books when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -85,7 +78,15 @@ export default function IssueBookModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load users and books when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadData();
+    }
+  }, [isOpen, loadData]);
 
   // Filter users based on search
   const filteredUsers = users.filter(

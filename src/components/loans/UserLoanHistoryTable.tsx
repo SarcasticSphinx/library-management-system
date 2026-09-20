@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { BorrowStatus } from '@prisma/client';
 import LoanStatusBadge from './LoanStatusBadge';
 import type { LoanRecord } from '@/types/loan';
@@ -83,11 +84,14 @@ export default function UserLoanHistoryTable({ loans }: UserLoanHistoryTableProp
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {loan.book.coverImage && (
-                            <img
-                              src={loan.book.coverImage}
-                              alt={loan.book.title}
-                              className="w-10 h-14 object-cover rounded mr-3"
-                            />
+                            <div className="relative w-10 h-14 mr-3 flex-shrink-0">
+                              <Image
+                                src={loan.book.coverImage}
+                                alt={loan.book.title}
+                                fill
+                                className="object-cover rounded"
+                              />
+                            </div>
                           )}
                           <div>
                             <div className="text-sm font-medium text-gray-900">
@@ -180,11 +184,14 @@ export default function UserLoanHistoryTable({ loans }: UserLoanHistoryTableProp
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {loan.book.coverImage && (
-                          <img
-                            src={loan.book.coverImage}
-                            alt={loan.book.title}
-                            className="w-10 h-14 object-cover rounded mr-3"
-                          />
+                          <div className="relative w-10 h-14 mr-3 flex-shrink-0">
+                            <Image
+                              src={loan.book.coverImage}
+                              alt={loan.book.title}
+                              fill
+                              className="object-cover rounded"
+                            />
+                          </div>
                         )}
                         <div>
                           <div className="text-sm font-medium text-gray-900">
