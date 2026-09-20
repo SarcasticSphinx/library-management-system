@@ -138,7 +138,7 @@ export default async function Home() {
             </div>
 
             <div className="flex items-start gap-2.5">
-              <Clock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <Clock className="w-4 h-4 text-[#6395ee] shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs font-semibold text-white">Live Circulation</h4>
                 <p className="text-[11px] text-slate-400 font-light">Instant loan issuance & return</p>
@@ -146,7 +146,7 @@ export default async function Home() {
             </div>
 
             <div className="flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+              <ShieldCheck className="w-4 h-4 text-[#6395ee] shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs font-semibold text-white">Role-Based Access</h4>
                 <p className="text-[11px] text-slate-400 font-light">Admin desk & student dashboards</p>
@@ -179,9 +179,7 @@ export default async function Home() {
             <span>Central Library Management System</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400 text-[11px]">
-            <span>CSE 3206 Software Engineering Sessional</span>
-            <span>&bull;</span>
-            <span>Kazla, Rajshahi-6204</span>
+            <span>Kazla, Rajshahi-6204, Bangladesh</span>
           </div>
         </div>
       </footer>

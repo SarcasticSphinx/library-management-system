@@ -11,7 +11,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "RUET Library Management System",
-  description: "CSE 3206 Software Engineering Lab Project - RUET Library Management System",
+  description: "Central Library Management System - Rajshahi University of Engineering & Technology",
 };
 
 export default function RootLayout({
